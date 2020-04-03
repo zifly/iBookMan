@@ -4,8 +4,8 @@ strArr=new Array(3,100,101,104,105,106,108,111,112,113,118,119,129,200,208,501,5
 intArr=new Array(115,116,121,125,201,202,204,205,206,207,401,402,403,404,405,406,542);
 binArr=new Array(131,203,209,300);
 
-myargs=process.argv.splice(2);
-sFile=myargs[0];
+//myargs=process.argv.splice(2);
+//sFile=myargs[0];
 
 /**
  * azw3和mobi文件中读取书籍标签信息
@@ -53,9 +53,16 @@ function bookHeader(sFile){
          headerbuff=myBuffer.slice(pos,pos+4);
          pdblength=intConv(headerbuff)
          //console.log("PDBHeader:"+pdblength);
+         
+         pos=pdblength+20;
+         
+         humbuff=myBuffer.slice(pos,pos+4);
+         humlength=intConv(humbuff);
+         //console.log("humheader:"+humlength)
 
+         pos=pos+64
          //get book name 获取书籍名称
-         pos=pdblength+84
+         
          nameoffbuff=myBuffer.slice(pos,pos+4);
          nameoffset=intConv(nameoffbuff);
          //console.log("nameoffset:"+nameoffset)
@@ -70,8 +77,8 @@ function bookHeader(sFile){
          
          if(namestr!="") bookInfo["999"]=namestr;
 
-         //MOBIheader标准长度256 跳过所有MOBIheader
-         pos=pdblength+256 
+         nextmobipos=humlength-68;
+         pos=pos+nextmobipos;
 
          //开始EXTH标签头
          //4byte 标签个数
@@ -120,6 +127,7 @@ function bookHeader(sFile){
         err="找不到书籍文件:"+sFile;
     }
     this.header=bookInfo;
+    this.book=sFile;
     this.err=err;
     return this;
 }
