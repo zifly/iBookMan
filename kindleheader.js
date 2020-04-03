@@ -79,6 +79,10 @@ function bookHeader(sFile){
 
          nextmobipos=humlength-68;
          pos=pos+nextmobipos;
+         
+         //标签开始位置：pdblength开始的话，mobiheader长度为256,azwheader长度288 
+         //pos=pdblength+mobiheader|azwheader
+         //从humlength位置判断，则不需要判断是那个头文件长度
 
          //开始EXTH标签头
          //4byte 标签个数
