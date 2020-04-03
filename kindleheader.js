@@ -33,7 +33,16 @@ binArr=new Array(131,203,209,300);
 
 
 function bookHeader(sFile){
-    var bookInfo={};
+    var bookInfo={
+        bookname:{},
+        EXTH:{
+            offsetpos:0,
+            length:0,
+            labcount:0,
+            labs:[]
+        }
+        
+    };
     var err=""
     if(fs.existsSync(sFile)){
          
@@ -62,7 +71,7 @@ function bookHeader(sFile){
 
          pos=pos+64
          //get book name 获取书籍名称
-         
+         nameinfopos=pos;
          nameoffbuff=myBuffer.slice(pos,pos+4);
          nameoffset=intConv(nameoffbuff);
          //console.log("nameoffset:"+nameoffset)
@@ -70,24 +79,42 @@ function bookHeader(sFile){
          namelengthbuff=myBuffer.slice(pos,pos+4)
          namelength=intConv(namelengthbuff);
          //console.log("name length:"+namelength)
-         pos=pos+4
+         //pos=pos+4
          namepos=pdblength+nameoffset;
          namebuff=myBuffer.slice(namepos,namepos+namelength);
          namestr=namebuff.toString();
          
-         if(namestr!="") bookInfo["999"]=namestr;
+         if(namestr!=""){
+            nameinfo={
+                'nameinfopos':nameinfopos,
+                'nameoffset':nameoffset,
+                'namelengthoffset':pos,
+                'namelength':namelength,
+                'namepos':namepos,
+                'name':namestr,
+            }
+            bookInfo['bookname']=nameinfo
+          } 
 
-         nextmobipos=humlength-68;
-         pos=pos+nextmobipos;
+         nextmobipos=humlength-72;
          
+         //开始EXTH标签头
          //标签开始位置：pdblength开始的话，mobiheader长度为256,azwheader长度288 
          //pos=pdblength+mobiheader|azwheader
          //从humlength位置判断，则不需要判断是那个头文件长度
-
-         //开始EXTH标签头
+         //4字节标识:exth 跳过
+         //4字节 exth长度
+         bookInfo.EXTH['offsetpos']=pos+nextmobipos;
+         pos=pos+nextmobipos+4;
+         lengthbuff=myBuffer.slice(pos,pos+4)
+         exthlength=intConv(lengthbuff);
+         bookInfo.EXTH['length']=exthlength;
+         //console.log("exthlength="+exthlength)
+         pos=pos+4
          //4byte 标签个数
          countbuff=myBuffer.slice(pos,pos+4)
          countlength=intConv(countbuff);
+         bookInfo.EXTH['labcount']=countlength;
          //console.log("countlength:"+countlength);
 
          pos=pos+4
@@ -98,30 +125,50 @@ function bookHeader(sFile){
             tempbuff=myBuffer.slice(pos,pos+4);
             lab=intConv(tempbuff);
             labtype=getlabType(lab);
-
+            laboffset=pos;
+            
             pos=pos+4;
             tempbuff=myBuffer.slice(pos,pos+4);
             num2=intConv(tempbuff);
+            lablength=num2;  //含前面lab名称的4个字节和lab内容长度的4字节
+            
             pos=pos+4
             conlength=num2-8;
             conbuff=myBuffer.slice(pos,pos+conlength);
+        
             switch(labtype){
                 case 0:
                     constr=conbuff.toString();
+                    
+                    labcontent={
+                        "type":"String",
+                        "data":constr
+                    }
+                    //labcontent=constr
                     break;
                 case 1:
                     constr=intConv(conbuff);
+                    
+                    labcontent={
+                        "type":"Integer",
+                        "data":constr
+                    }
+                    //labcontent=constr
                     break;
                 default:
-                    //constr=conbuff;            
-                    constr=""
+                    labcontent=conbuff;
+                    //constr=""
             }
-            
+
+            labinfo={
+                'lab':lab,
+                'laboffset':laboffset,
+                'lablength':lablength,
+                'labcontent':labcontent
+            }
+            bookInfo.EXTH.labs.push(labinfo);
+
             pos=pos+conlength;
-            if(constr!=""){
-                bookInfo[lab]=constr;
-            }
-            
             rnum++;
          }
 
